@@ -277,7 +277,7 @@ for item in "${ip_array[@]}"; do
   result_file="$(mktemp /tmp/iperf3_result_XXXXXX)"
   iperf3 -B "${ip}" -c "${arg_server}" -f m -t "${arg_time}" > "${result_file}"
   if check_iperf3_result "${result_file}" "${ifc}" "${arg_category}"; then
-    msg "network speed for interface ${ifc} is correct"
+    msg "network speed for interface ${ifc} is OK"
   else
     abort "network speed for interface ${ifc} is incorrect"
   fi
