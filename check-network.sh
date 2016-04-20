@@ -16,6 +16,12 @@ LC_ALL=C
 app_file="${0}"
 app_name="$(basename $0)"
 
+declare -a iperf_ports
+for i in $(seq 50); do
+  port=$(expr 5200 + "${i}")
+  iperf_ports+=("${port}")
+done
+
 ###* Help functions
 msg() {
   local mesg="$1"; shift
@@ -275,7 +281,14 @@ for item in "${ip_array[@]}"; do
   ip="${item##*|}"
   msg "Collecting iperf3 data with binding address ${ip}(${ifc})"
   result_file="$(mktemp /tmp/iperf3_result_XXXXXX)"
-  iperf3 -B "${ip}" -c "${arg_server}" -f m -t "${arg_time}" > "${result_file}"
+  for p in "${iperf_ports[@]}"; do
+    if iperf3 -p "${p}" -B "${ip}" -c "${arg_server}" -f m -t "${arg_time}" > "${result_file}"; then
+      msg2 "finish with iperf3 server ${ip}:${p}"
+      break
+    else
+      msg2 "ignore ${ip}:${p}"
+    fi
+  done
   if check_iperf3_result "${result_file}" "${ifc}" "${arg_category}"; then
     msg "network speed for interface ${ifc} is OK"
   else
