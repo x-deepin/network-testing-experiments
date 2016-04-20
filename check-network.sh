@@ -168,7 +168,8 @@ check_iperf3_result() {
 
   msg2 "format iperf3 data"
   local fixed_file="$(mktemp /tmp/iperf3_fixed_result_XXXXXX)"
-  awk '$(11) ~ /^KBytes/ {print i++, $7}' "${result_file}" > "${fixed_file}"
+  awk '$(11) ~ /Bytes$/ {print i++, $7}' "${result_file}" > "${fixed_file}"
+  head -5 "${fixed_file}"
 
   msg2 "generate gnuplot chart"
   gnuplot <<<"
@@ -207,8 +208,8 @@ plot '${fixed_file}' using 1:2 title 'iperf3' with lines,
     fi
   fi
 
-  rm "${fixed_file}"
   if [ "${ok}" ]; then
+    rm "${fixed_file}"
     return 0
   else
     return 1
