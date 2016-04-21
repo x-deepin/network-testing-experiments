@@ -1,0 +1,54 @@
+{
+    "timeout": 18000,
+    "target": "vm1",
+    "job_name": "vm1-job1",
+
+    "actions": [
+        {
+            "command": "deploy_linaro_kernel",
+            "parameters":
+            {
+                "bootloadertype": "ipxe",
+                "kernel": "http://10.3.2.1/vmlinuz",
+                "ramdisk": "http://10.3.2.1/initrd",
+                "target_type": "ubuntu"
+            }
+        },
+        {
+            "command": "boot_linaro_image",
+            "parameters":
+            {
+                "boot_cmds": [
+                    "dhcp net0",
+                    "kernel http://172.16.166.138/tmp/{KERNEL} root=/dev/nfs rw nfsroot=10.3.2.1:/srv/nfs/deepin-15-20160604,tcp,hard,intr ip=dhcp console=ttyS1",
+                    "initrd http://172.16.166.138/tmp/{RAMDISK}",
+                    "boot"
+                ]
+            }
+        },
+        {
+            "command": "lava_test_shell",
+            "parameters": {
+                "testdef_repos": [
+                    {
+                        "git-repo": "https://github.com/x-deepin/network-testing-experiments.git",
+                        "testdef": "network-testing.yaml",
+                        "parameters": {
+                            "IPERF3_SERVER": "10.3.2.1",
+                            "ADAPTER_TYPE": "wired",
+                            "TIME": 30
+                        }
+                    }
+                ],
+                "timeout": 900
+            }
+        },
+        {
+            "command": "submit_results",
+            "parameters": {
+                "server": "http://172.16.166.138/RPC2/",
+                "stream": "/anonymous/job1-stream/"
+            }
+        }
+    ]
+}
