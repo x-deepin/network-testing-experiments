@@ -36,18 +36,18 @@ msg2() {
 warning() {
   if [ -z "${IGNORE_WARN}" ]; then
       local mesg="$1"; shift
-      printf "${YELLOW}==> $(gettext "WARNING:")${ALL_OFF}${BOLD} ${mesg}${ALL_OFF}\n" "$@" >&2
+      printf "${YELLOW}==> WARNING:${ALL_OFF}${BOLD} ${mesg}${ALL_OFF}\n" "$@" >&2
   fi
 }
 
 error() {
   local mesg="$1"; shift
-  printf "${RED}==> $(gettext "ERROR:")${ALL_OFF}${BOLD} ${mesg}${ALL_OFF}\n" "$@" >&2
+  printf "${RED}==> ERROR:${ALL_OFF}${BOLD} ${mesg}${ALL_OFF}\n" "$@" >&2
 }
 
 abort() {
   error "$@"
-  error "$(gettext "Aborting...")"
+  error "Aborting..."
   exit 1
 }
 
