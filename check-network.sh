@@ -17,9 +17,8 @@ app_file="${0}"
 app_name="$(basename $0)"
 
 declare -a iperf_ports
-for i in $(seq 50); do
-  port=$(expr 5200 + "${i}")
-  iperf_ports+=("${port}")
+for p in {5201..5250}; do
+  iperf_ports+=("${p}")
 done
 
 ###* Help functions
@@ -200,10 +199,11 @@ plot '${fixed_file}' using 1:2 title 'iperf3' with lines,
 
   msg2 "check if network average speed is OK"
   if [ "${ok}" ]; then
-    if [ $(bc <<<"${all_speed}/${i} >= ${prefer_speed}") -eq 1 ]; then
-      msg2 "network average speed is OK: ${all_speed}/${i} >= ${prefer_speed}"
+    local real_speed="$(bc -l <<<"${all_speed} / ${i}")"
+    if [ $(bc <<<"${real_speed} >= ${prefer_speed}") -eq 1 ]; then
+      msg2 "network average speed is OK: ${all_speed}/${i}=${real_speed} >= ${prefer_speed}"
     else
-      msg2 "network average speed is incorrect: ${all_speed}/${i} < ${prefer_speed}"
+      msg2 "network average speed is incorrect: ${all_speed}/${i}=${real_speed} < ${prefer_speed}"
       ok=
     fi
   fi

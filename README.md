@@ -26,8 +26,8 @@ $ ./check-network.sh -s 192.168.1.1 -c wireless -t 3600
 
 由于iperf3不支持多线程, 另外如果要支持多客户端, 需要运行多个iperf3服务
 器进程, 客户端无需做配置, check-network.sh会自动选择可用的端口进行连接:
-``` for i in $(seq 50); do
-port=$(expr 5200 + "${i}") iperf3 -s -p ${port} & done
+```
+$ for p in {5201..5220}; do iperf3 -s -p ${p} & done
 ```
 
 查看完整说明:
