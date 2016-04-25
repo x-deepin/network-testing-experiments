@@ -1,30 +1,17 @@
 {
-    "timeout": 18000,
-    "target": "vm1",
-    "job_name": "vm1-job1",
-
     "actions": [
         {
             "command": "deploy_linaro_kernel",
-            "parameters":
-            {
+            "parameters": {
                 "bootloadertype": "ipxe",
-                "kernel": "http://10.3.2.1/vmlinuz",
-                "ramdisk": "http://10.3.2.1/initrd",
-                "target_type": "ubuntu"
+                "kernel": "http://lava.deepin.io/tftpboot/vmlinuz",
+                "nfsrootfs": "http://lava.deepin.io/tftpboot/deepin.tar.gz",
+                "ramdisk": "http://lava.deepin.io/tftpboot/initrd.img",
+                "target_type": "deepin"
             }
         },
         {
-            "command": "boot_linaro_image",
-            "parameters":
-            {
-                "boot_cmds": [
-                    "dhcp net0",
-                    "kernel http://172.16.166.138/tmp/{KERNEL} root=/dev/nfs rw nfsroot=10.3.2.1:/srv/nfs/deepin-15-20160604,tcp,hard,intr ip=dhcp console=ttyS1",
-                    "initrd http://172.16.166.138/tmp/{RAMDISK}",
-                    "boot"
-                ]
-            }
+            "command": "boot_linaro_image"
         },
         {
             "command": "lava_test_shell",
@@ -32,12 +19,12 @@
                 "testdef_repos": [
                     {
                         "git-repo": "https://github.com/x-deepin/network-testing-experiments.git",
-                        "testdef": "network-testing.yaml",
                         "parameters": {
-                            "IPERF3_SERVER": "10.3.2.1",
                             "ADAPTER_TYPE": "wired",
+                            "IPERF3_SERVER": "lava.deepin.io",
                             "TIME": 30
-                        }
+                        },
+                        "testdef": "network-testing.yaml"
                     }
                 ],
                 "timeout": 900
@@ -46,9 +33,12 @@
         {
             "command": "submit_results",
             "parameters": {
-                "server": "http://172.16.166.138/RPC2/",
-                "stream": "/anonymous/job1-stream/"
+                "server": "http://lava.deepin.io/RPC2/",
+                "stream": "/anonymous/network/"
             }
         }
-    ]
+    ],
+    "device_type": "x86_skip_ipxe",
+    "job_name": "network-testing",
+    "timeout": 18000
 }
