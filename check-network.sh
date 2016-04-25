@@ -162,6 +162,10 @@ check_iperf3_result() {
   else
     device_speed="$(get_wireless_speed ${ifc})"
   fi
+  if [ -z "${device_speed}" ]; then
+    warning "Get device speed failed, use 50 Mbits/s as default"
+    device_speed=50
+  fi
   local prefer_speed=$(bc -l <<<"${device_speed}/${speed_scale}")
   msg2 "guess device prefer speed: ${device_speed}/${speed_scale}=${prefer_speed} Mbit/s"
 
