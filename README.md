@@ -1,19 +1,47 @@
-**描述**: 检测网卡驱动是否正常工作
+**描述**: 网络自动华测试工具集合
 
 ## 依赖
 
+**prepare-network**
+- awk
+- sed
+- network-manager
+
+**check-network**
 - awk
 - bc
 - gnuplot
 - ip
 - iperf3
 - lshw
-- mktemp
 - sed
-- /sbin/ethtool
-- /sbin/iwconfig
+- ethtool
+- wireless-tools
 
 ## 使用说明
+
+### prepare-network
+
+用于为网络测试准备环境, 例如连接有线, 无线及清空网络配置文件, 例如:
+```
+$ ./prepare-network.sh connect-wireless myssid mypassword
+$ ./prepare-network.sh clear-wireless-connections
+```
+
+查看完整说明:
+```
+prepare-network.sh <command> [args...] [-h]
+Options:
+    -h, --help, show this message
+Command list:
+    clear-connections
+    clear-wired-connections
+    clear-wireless-connections
+    connect-wired: TODO
+    connect-wireless: <SSID> <password>
+```
+
+### check-network
 
 需指定iperf3服务端地址, 要检测的网卡类型(wired/wireless)以及检测时长(单位:秒),
 

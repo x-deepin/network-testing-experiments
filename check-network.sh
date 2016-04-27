@@ -34,8 +34,8 @@ msg2() {
 
 warning() {
   if [ -z "${IGNORE_WARN}" ]; then
-      local mesg="$1"; shift
-      printf "${YELLOW}==> WARNING:${ALL_OFF}${BOLD} ${mesg}${ALL_OFF}\n" "$@" >&2
+    local mesg="$1"; shift
+    printf "${YELLOW}==> WARNING:${ALL_OFF}${BOLD} ${mesg}${ALL_OFF}\n" "$@" >&2
   fi
 }
 
