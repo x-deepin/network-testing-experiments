@@ -1,0 +1,33 @@
+metadata:
+    name: iperf3
+    format: "Lava-Test-Shell Test Definition 1.0"
+    description: "Network Adapter Testing"
+    os:
+        - ubuntu
+    devices:
+        - vm1
+    scope:
+        - networking
+    environment:
+        - lava-test-shell
+
+install:
+    deps:
+        - gawk
+        - iperf3
+        - bc
+        - iproute2
+        - lshw
+        - coreutils
+        - gnuplot
+        - wireless-tools
+        - ethtool
+
+params:
+    IPERF3_SERVER: lava.deepin.io
+    ADAPTER_TYPE: wired
+    TIME: 10
+
+run:
+    steps:
+        - ./check-network.sh -s ${IPERF3_SERVER} -c ${ADAPTER_TYPE} -t ${TIME}
