@@ -1,7 +1,7 @@
 metadata:
     name: iperf3
     format: "Lava-Test-Shell Test Definition 1.0"
-    description: "Network Adapter Testing"
+    description: "Network Wired Adapter Testing"
     os:
         - ubuntu
     devices:

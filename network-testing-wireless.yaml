@@ -1,7 +1,7 @@
 metadata:
     name: iperf3
     format: "Lava-Test-Shell Test Definition 1.0"
-    description: "Network Adapter Testing"
+    description: "Network Wireless Adapter Testing"
     os:
         - ubuntu
     devices:
@@ -27,7 +27,7 @@ params:
     IPERF3_SERVER: lava.deepin.io
     ADAPTER_TYPE: wireless
     SSID: lava-test
-    PASSWORD: lava-test
+    PASSWORD: lava-test-with-hard-password
     TIME: 10
 
 run:
