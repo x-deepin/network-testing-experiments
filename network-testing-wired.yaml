@@ -30,4 +30,5 @@ params:
 
 run:
     steps:
+        - deepin-feedback-cli --dump network
         - ./check-network.sh -s ${IPERF3_SERVER} -c ${ADAPTER_TYPE} -t ${TIME}
