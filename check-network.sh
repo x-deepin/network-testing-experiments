@@ -278,7 +278,7 @@ ignore_virtual_interfaces
 get_ip_array
 
 if [ "${#ip_array[@]}" -eq 0 ]; then
-  abort "there is no ip address for ${arg_category} devices"
+  warning "there is no ip address for ${arg_category} devices"
 fi
 
 for item in "${ip_array[@]}"; do
