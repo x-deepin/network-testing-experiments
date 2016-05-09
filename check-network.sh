@@ -87,6 +87,10 @@ ensure_cmd_exists() {
   fi
 }
 
+collect_error() {
+  errors+=("$1")
+}
+
 get_ifc_array_for_wired() {
   msg "Get interfaces for wired device"
   for ifc in $(/sbin/iwconfig 2>&1 1>/dev/null | grep 'no wireless extensions' | awk '{print $1}'); do
@@ -224,8 +228,12 @@ plot '${fixed_file}' using 1:2 title 'iperf3' with lines,
 
 arg_server='192.168.1.1'
 arg_category='wireless'
+arg_devicenum=
 arg_time=3600
 arg_help=
+
+# collect errors and report at end
+declare -a errors
 
 declare -a ifc_array
 
@@ -234,10 +242,11 @@ declare -a ip_array
 
 show_usage() {
   cat <<EOF
-${app_name} [-s <server>] [-c <category>] [-t <time>] [-h]
+${app_name} [-s <server>] [-c <category>] [-n <devicenum>] [-t <time>] [-h]
 Options:
     -s, --server, iperf3 server
     -c, --category, could be wired or wireless (default: wireless)
+    -n, --devicenum, the prefer network device number in local to test
     -t, --time, the seconds to run for iperf3 client (default: 3600)
     -h, --help, show this message
 EOF
@@ -248,6 +257,7 @@ while [ "$#" -gt 0 ]; do
   case "$1" in
     -s|--server) arg_server="$2"; shift; shift;;
     -c|--category) arg_category="$2"; shift; shift;;
+    -n|--devicenum) arg_devicenum="$2"; shift; shift;;
     -t|--time) arg_time="$2"; shift; shift;;
     -h|--help) arg_help=t; break;;
     *)  shift;;
@@ -277,6 +287,12 @@ fi
 ignore_virtual_interfaces
 get_ip_array
 
+if [ "${arg_devicenum}" ]; then
+  if [ "${#ip_array[@]}" -ne "${arg_devicenum}" ]; then
+    collect_error "actived network device number is wrong, prefer ${arg_devicenum}, but in fact is ${#ip_array[@]}"
+  fi
+fi
+
 if [ "${#ip_array[@]}" -eq 0 ]; then
   warning "there is no ip address for ${arg_category} devices"
 fi
@@ -297,10 +313,18 @@ for item in "${ip_array[@]}"; do
   if check_iperf3_result "${result_file}" "${ifc}" "${arg_category}"; then
     msg "network speed for interface ${ifc} is OK"
   else
-    abort "network speed for interface ${ifc} is incorrect"
+    collect_error "network speed for interface ${ifc} is incorrect"
   fi
   rm "${result_file}"
 done
+
+if [ "${#errors[@]}" -ne 0 ]; then
+  error "collected errors:"
+  for e in "${errors[@]}"; do
+    msg2 "${e}"
+  done
+  abort "error occured"
+fi
 
 # Local Variables:
 # mode: sh
