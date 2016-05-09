@@ -178,10 +178,15 @@ cmd_connect-wireless() {
   local pwd="$2"
   msg2 "Options: ssid=${ssid}, password=${pwd}"
 
-  # add and active wireless connection
   for if in $(get_all_nm_wireless_devices); do
+    # add connection manually instead of using "nmcli dev wifi connect" here to fix hidden SSID issue
+    msg2 "adding wireless connection for SSID ${if}..."
+    nmcli connection add type wifi con-name "${ssid}" ifname "${if}" ssid "${ssid}"
+    nmcli connection modify "${ssid}" wifi-sec.key-mgmt wpa-psk
+    nmcli connection modify "${ssid}" wifi-sec.psk "${pwd}"
+
     msg2 "connecting with ifname ${if}..."
-    nmcli device wifi connect "${ssid}" password "${pwd}" ifname "${if}"
+    nmcli connection up "${ssid}" ifname "${if}"
   done
 }
 usage_connect-wireless() {
