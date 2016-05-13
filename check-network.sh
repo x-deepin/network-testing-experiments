@@ -91,56 +91,80 @@ collect_error() {
   errors+=("$1")
 }
 
-get_ifc_array_for_wired() {
-  msg "Get interfaces for wired device"
-  for ifc in $(/sbin/iwconfig 2>&1 1>/dev/null | grep 'no wireless extensions' | awk '{print $1}'); do
-    msg2 "${ifc}"
-    ifc_array+=("${ifc}")
+print_real_ifcs() {
+  for ifc in $(lshw -short -C network 2>/dev/null | sed '1,2d' | awk '{print $2}'); do
+    echo "${ifc}"
   done
 }
 
-get_ifc_array_for_wireless() {
-  msg "Get interfaces for wireless device"
+get_wireless_ifc_array() {
   for ifc in $(/sbin/iwconfig 2>/dev/null | grep 'IEEE' | awk '{print $1}'); do
-    msg2 "${ifc}"
-    ifc_array+=("${ifc}")
+    wireless_ifc_array+=("${ifc}")
   done
 }
-
-ignore_virtual_interfaces() {
-  msg "Ignore virtual interfaces"
-  declare -a real_ifc_array
-  declare -a fixed_ifc_array
-  for ifc in $(lshw -C network 2>/dev/null | grep 'logical name' | awk '{print $3}'); do
-    real_ifc_array+=("${ifc}")
-  done
-  for ifc in "${ifc_array[@]}"; do
-    local found=
-    for real_ifc in "${real_ifc_array[@]}"; do
-      if [ "${real_ifc}" = "${ifc}" ]; then
-        found=t
-        break
-      fi
-    done
-    if [ "${found}" ]; then
-      fixed_ifc_array+=("${ifc}")
-    else
-      msg2 "ignore ${ifc}"
+is_wireless_ifc() {
+  local ifc="$1"
+  local found=
+  for tmp_ifc in "${wireless_ifc_array[@]}"; do
+    if [ "${tmp_ifc}" = "${ifc}" ]; then
+      found=t
+      break
     fi
   done
-  ifc_array=("${fixed_ifc_array[@]}")
+  if [ "${found}" ]; then
+    return
+  else
+    return 1
+  fi
 }
 
-get_ip_array() {
-  msg "Get IP addresses for network device"
-  for ifc in "${ifc_array[@]}"; do
-    local ip="$(ip address show ${ifc} | grep 'inet ' | awk '{print $2}' | awk -F/ '{print $1}' | head -1)"
-    if [ -n "${ip}" ]; then
-      msg2 "${ifc}: ${ip}"
-      ip_array+=("${ifc}|${ip}")
+print_ifc_ip() {
+  local ifc="${1}"
+  ip address show ${ifc} | grep 'inet ' | awk '{print $2}' | awk -F/ '{print $1}' | head -1
+}
+
+# print network device ID which format looks like pci@8086:10f5, usb@148f:5370
+print_ifc_id() {
+  # get bus info through lshw
+  local businfo="$(lshw -businfo -c network 2>/dev/null | sed '1,2d' | awk -v ifc="${ifc}" '$2 ~ ifc{print $1}')"
+  local type="${businfo%%@*}"
+  local busid="${businfo##*@}"
+  if [ "${type}" = "usb" ]; then
+    # fix bus id for usb device, "usb@10:1" -> "usb@10-1"
+    busid="${busid/:/-}"
+  fi
+  local buspath="/sys/bus/${type}/devices/${busid}"
+  if [ "${type}" = "usb" ]; then
+    local idVendor="$(cat ${buspath}/idVendor)"
+    local idProduct="$(cat ${buspath}/idProduct)"
+  elif [ "${type}" = "pci" ]; then
+    local idVendor="$(cat ${buspath}/vendor | sed 's/^0x//')"
+    local idProduct="$(cat ${buspath}/device | sed 's/^0x//')"
+  fi
+  echo "${type}@${idVendor}:${idProduct}"
+}
+
+print_ifc_desc() {
+  local ifc="$1"
+  lshw -short -c network 2>/dev/null | sed '1,2d' | awk -v ifc="${ifc}" '$2 ~ ifc{for (i=4;i<NF;i++)printf $i " "; print $NF}'
+}
+
+get_ifc_details() {
+  msg "Get network interface details"
+  get_wireless_ifc_array
+  for ifc in $(print_real_ifcs); do
+    local type=
+    if is_wireless_ifc "${ifc}"; then
+      type="wireless"
     else
-      msg2 "${ifc}: no ip address"
+      type="wired"
     fi
+    local ip="$(print_ifc_ip "${ifc}")"
+    local id="$(print_ifc_id "${ifc}")"
+    local desc="$(print_ifc_desc "${ifc}")"
+    local item="${type}|${ifc}|${ip}|${id}|${desc}"
+    msg2 "${item}"
+    ifc_details+=("${item}")
   done
 }
 
@@ -232,10 +256,21 @@ arg_devicenum=
 arg_time=3600
 arg_help=
 
-# collect errors and report at end
+# collect errors to keep code continue and report at end
 declare -a errors
 
-declare -a ifc_array
+# collect all test results
+declare -a results
+
+declare -a wireless_ifc_array
+declare -a none_wireless_ifc_array
+
+# each item will contains interface details in format
+# "type|ifc|ip|id|desc" such as:
+#   ("wired|enp0s25|192.168.1.101|pci@8086:10f5|82567LM Gigabit Network Connection",
+#    "wireless|wlp3s0|192.168.1.102|pci@8086:4237|PRO/Wireless 5100 AGN [Shiloh] Network Connection",
+#    "wireless|wlx7cdd90b2c508|192.168.1.103|usb@148f:5370|Wireless interface")
+declare -a ifc_details
 
 # each item will contains interface info such as ("eth0|192.168.1.100")
 declare -a ip_array
@@ -277,15 +312,26 @@ done
 msg "Options"
 msg2 "Server: ${arg_server}"
 msg2 "Category: ${arg_category}"
+msg2 "DeviceNum: ${arg_devicenum}"
 msg2 "Time: ${arg_time}"
 
-if [ "${arg_category}" = "wired" ]; then
-  get_ifc_array_for_wired
-else
-  get_ifc_array_for_wireless
-fi
-ignore_virtual_interfaces
-get_ip_array
+get_ifc_details
+msg "Get IP addresses for network device"
+for item in "${ifc_details[@]}"; do
+  type="$(echo "${item}" | awk -F'|' '{print $1}')"
+  if [ ! "${arg_category}" = "${type}" ]; then
+    continue
+  fi
+
+  ifc="$(echo "${item}" | awk -F'|' '{print $2}')"
+  ip="$(echo "${item}" | awk -F'|' '{print $3}')"
+  if [ -n "${ip}" ]; then
+    msg2 "${ifc}: ${ip}"
+    ip_array+=("${ifc}|${ip}")
+  else
+    msg2 "${ifc}: no ip address"
+  fi
+done
 
 if [ "${arg_devicenum}" ]; then
   if [ "${#ip_array[@]}" -ne "${arg_devicenum}" ]; then
