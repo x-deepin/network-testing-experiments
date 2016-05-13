@@ -256,7 +256,7 @@ plot '${fixed_file}' using 1:2 title 'iperf3' with lines,
 
 arg_server='192.168.1.1'
 arg_category=
-arg_devicenum=
+arg_devicenum=-1
 arg_deviceid=
 arg_time=3600
 arg_help=
@@ -282,9 +282,12 @@ show_usage() {
 ${app_name} [-s <server>] [-c <category> | -i <deviceid>] [-n <devicenum>] [-t <time>] [-h]
 Options:
     -s, --server, iperf3 server
-    -c, --category, could be wired or wireless (default: wireless)
-    -i, --deviceid, only run test for the target device
-    -n, --devicenum, the prefer network device number in local to test
+    -c, --category, only run test for the target network device category,
+                    could be wired or wireless (default: <not specified>)
+    -i, --deviceid, only run test for the target network device which own
+                    the same ID, the ID format looks like pci@8086:4237 or usb@148f:5370
+    -n, --devicenum, the prefer network device number in local to test,
+                    -1 means do not check the device number at all (default: -1)
     -t, --time, the seconds to run for iperf3 client (default: 3600)
     -h, --help, show this message
 EOF
@@ -359,13 +362,13 @@ for item in "${ifc_details[@]}"; do
   if check_iperf3_result "${result_file}" "${ifc}" "${arg_category}"; then
     collect_results "[PASS] ${ip} for ${ifc}[${id}](${desc})"
   else
-    collect_results "[FAILED] ${ifc}[${id}](${desc})"
+    collect_results "[FAILED] ${ip} for ${ifc}[${id}](${desc})"
     collect_error "network speed for interface ${ifc} is incorrect"
   fi
   rm "${result_file}"
 done
 
-if [ "${arg_devicenum}" ]; then
+if [ "${arg_devicenum}" -ge 0 ]; then
   if [ "${active_ifc_num}" -ne "${arg_devicenum}" ]; then
     collect_error "actived network device number is wrong, prefer ${arg_devicenum}, but in fact is ${active_ifc_num}"
   fi

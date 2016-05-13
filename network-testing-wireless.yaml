@@ -26,6 +26,7 @@ install:
 params:
     IPERF3_SERVER: lava.deepin.io
     ADAPTER_TYPE: wireless
+    ADAPTER_NUM: -1
     SSID: lava-test
     PASSWORD: lava-test-with-hard-password
     TIME: 10
@@ -34,5 +35,5 @@ run:
     steps:
         - deepin-feedback-cli --dump network
         - ./prepare-network.sh connect-wireless ${SSID} ${PASSWORD}
-        - ./check-network.sh -s ${IPERF3_SERVER} -c ${ADAPTER_TYPE} -t ${TIME}
+        - ./check-network.sh -s ${IPERF3_SERVER} -c ${ADAPTER_TYPE} -n ${ADAPTER_NUM} -t ${TIME}
         - ./prepare-network.sh clear-wireless-connections

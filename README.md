@@ -69,9 +69,12 @@ $ ./check-network.sh -h
 check-network.sh [-s <server>] [-c <category> | -i <deviceid>] [-n <devicenum>] [-t <time>] [-h]
 Options:
     -s, --server, iperf3 server
-    -c, --category, could be wired or wireless (default: wireless)
-    -i, --deviceid, only run test for the target device
-    -n, --devicenum, the prefer network device number in local to test
+    -c, --category, only run test for the target network device category,
+                    could be wired or wireless (default: <not specified>)
+    -i, --deviceid, only run test for the target network device which own
+                    the same ID, the ID format looks like pci@8086:4237 or usb@148f:5370
+    -n, --devicenum, the prefer network device number in local to test,
+                    -1 means do not check the device number at all (default: -1)
     -t, --time, the seconds to run for iperf3 client (default: 3600)
     -h, --help, show this message
 ```
