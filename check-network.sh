@@ -91,6 +91,10 @@ collect_error() {
   errors+=("$1")
 }
 
+collect_results() {
+  results+=("$1")
+}
+
 print_real_ifcs() {
   for ifc in $(lshw -short -C network 2>/dev/null | sed '1,2d' | awk '{print $2}'); do
     echo "${ifc}"
@@ -272,9 +276,6 @@ declare -a none_wireless_ifc_array
 #    "wireless|wlx7cdd90b2c508|192.168.1.103|usb@148f:5370|Wireless interface")
 declare -a ifc_details
 
-# each item will contains interface info such as ("eth0|192.168.1.100")
-declare -a ip_array
-
 show_usage() {
   cat <<EOF
 ${app_name} [-s <server>] [-c <category>] [-n <devicenum>] [-t <time>] [-h]
@@ -316,7 +317,8 @@ msg2 "DeviceNum: ${arg_devicenum}"
 msg2 "Time: ${arg_time}"
 
 get_ifc_details
-msg "Get IP addresses for network device"
+
+active_ifc_num=0
 for item in "${ifc_details[@]}"; do
   type="$(echo "${item}" | awk -F'|' '{print $1}')"
   if [ ! "${arg_category}" = "${type}" ]; then
@@ -325,27 +327,15 @@ for item in "${ifc_details[@]}"; do
 
   ifc="$(echo "${item}" | awk -F'|' '{print $2}')"
   ip="$(echo "${item}" | awk -F'|' '{print $3}')"
+  id="$(echo "${item}" | awk -F'|' '{print $4}')"
+  desc="$(echo "${item}" | awk -F'|' '{print $5}')"
   if [ -n "${ip}" ]; then
-    msg2 "${ifc}: ${ip}"
-    ip_array+=("${ifc}|${ip}")
+    ((active_ifc_num++))
   else
-    msg2 "${ifc}: no ip address"
+    collect_results "[IGNORE] inactive interface ${ifc}[${id}](${desc})"
+    continue
   fi
-done
 
-if [ "${arg_devicenum}" ]; then
-  if [ "${#ip_array[@]}" -ne "${arg_devicenum}" ]; then
-    collect_error "actived network device number is wrong, prefer ${arg_devicenum}, but in fact is ${#ip_array[@]}"
-  fi
-fi
-
-if [ "${#ip_array[@]}" -eq 0 ]; then
-  warning "there is no ip address for ${arg_category} devices"
-fi
-
-for item in "${ip_array[@]}"; do
-  ifc="${item%%|*}"
-  ip="${item##*|}"
   msg "Collecting iperf3 data with binding address ${ip}(${ifc})"
   result_file="$(mktemp /tmp/iperf3_result_XXXXXX)"
   for p in "${iperf_ports[@]}"; do
@@ -357,11 +347,27 @@ for item in "${ip_array[@]}"; do
     fi
   done
   if check_iperf3_result "${result_file}" "${ifc}" "${arg_category}"; then
-    msg "network speed for interface ${ifc} is OK"
+    collect_results "[PASS] ${ip} for ${ifc}[${id}](${desc})"
   else
+    collect_results "[FAILED] ${ifc}[${id}](${desc})"
     collect_error "network speed for interface ${ifc} is incorrect"
   fi
   rm "${result_file}"
+done
+
+if [ "${arg_devicenum}" ]; then
+  if [ "${active_ifc_num}" -ne "${arg_devicenum}" ]; then
+    collect_error "actived network device number is wrong, prefer ${arg_devicenum}, but in fact is ${active_ifc_num}"
+  fi
+fi
+
+if [ "${active_ifc_num}" -eq 0 ]; then
+  warning "there is no ip address for ${arg_category} devices"
+fi
+
+msg "Results"
+for r in "${results[@]}"; do
+  msg2 "${r}"
 done
 
 if [ "${#errors[@]}" -ne 0 ]; then
