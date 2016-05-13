@@ -255,8 +255,9 @@ plot '${fixed_file}' using 1:2 title 'iperf3' with lines,
 ###* Main loop
 
 arg_server='192.168.1.1'
-arg_category='wireless'
+arg_category=
 arg_devicenum=
+arg_deviceid=
 arg_time=3600
 arg_help=
 
@@ -278,10 +279,11 @@ declare -a ifc_details
 
 show_usage() {
   cat <<EOF
-${app_name} [-s <server>] [-c <category>] [-n <devicenum>] [-t <time>] [-h]
+${app_name} [-s <server>] [-c <category> | -i <deviceid>] [-n <devicenum>] [-t <time>] [-h]
 Options:
     -s, --server, iperf3 server
     -c, --category, could be wired or wireless (default: wireless)
+    -i, --deviceid, only run test for the target device
     -n, --devicenum, the prefer network device number in local to test
     -t, --time, the seconds to run for iperf3 client (default: 3600)
     -h, --help, show this message
@@ -293,6 +295,7 @@ while [ "$#" -gt 0 ]; do
   case "$1" in
     -s|--server) arg_server="$2"; shift; shift;;
     -c|--category) arg_category="$2"; shift; shift;;
+    -i|--deviceid) arg_deviceid="$2"; shift; shift;;
     -n|--devicenum) arg_devicenum="$2"; shift; shift;;
     -t|--time) arg_time="$2"; shift; shift;;
     -h|--help) arg_help=t; break;;
@@ -321,14 +324,21 @@ get_ifc_details
 active_ifc_num=0
 for item in "${ifc_details[@]}"; do
   type="$(echo "${item}" | awk -F'|' '{print $1}')"
-  if [ ! "${arg_category}" = "${type}" ]; then
-    continue
-  fi
-
   ifc="$(echo "${item}" | awk -F'|' '{print $2}')"
   ip="$(echo "${item}" | awk -F'|' '{print $3}')"
   id="$(echo "${item}" | awk -F'|' '{print $4}')"
   desc="$(echo "${item}" | awk -F'|' '{print $5}')"
+
+  if [ "${arg_category}" ]; then
+    if [ ! "${arg_category}" = "${type}" ]; then
+      continue
+    fi
+  elif [ "${arg_deviceid}" ]; then
+    if [ ! "${arg_deviceid}" = "${id}" ]; then
+      continue
+    fi
+  fi
+
   if [ -n "${ip}" ]; then
     ((active_ifc_num++))
   else
@@ -362,7 +372,11 @@ if [ "${arg_devicenum}" ]; then
 fi
 
 if [ "${active_ifc_num}" -eq 0 ]; then
-  warning "there is no ip address for ${arg_category} devices"
+  if [ "${arg_deviceid}" ]; then
+    collect_error "there is no active device with id=${arg_deviceid}"
+  else
+    warning "there is no ip address for ${arg_category} devices"
+  fi
 fi
 
 msg "Results"

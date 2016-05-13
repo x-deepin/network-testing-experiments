@@ -52,7 +52,12 @@ Command list:
 $ ./check-network.sh -s 192.168.1.1 -c wireless -t 3600
 ```
 
-由于iperf3不支持多线程, 另外如果要支持多客户端, 需要运行多个iperf3服务
+也可以单独指定要测试的网卡设备
+```
+$ ./check-network.sh -s 192.168.1.1 -i "pci@8086:4237" -t 3600
+```
+
+由于iperf3不支持多线程, 如果要支持多客户端, 需要运行多个iperf3服务
 器进程, 客户端无需做配置, check-network.sh会自动选择可用的端口进行连接:
 ```
 $ for p in {5201..5220}; do iperf3 -s -p ${p} & done
@@ -61,10 +66,12 @@ $ for p in {5201..5220}; do iperf3 -s -p ${p} & done
 查看完整说明:
 ```
 $ ./check-network.sh -h
-check-network.sh [-s <server>] [-c <category>] [-t <time>] [-h]
+check-network.sh [-s <server>] [-c <category> | -i <deviceid>] [-n <devicenum>] [-t <time>] [-h]
 Options:
     -s, --server, iperf3 server
     -c, --category, could be wired or wireless (default: wireless)
+    -i, --deviceid, only run test for the target device
+    -n, --devicenum, the prefer network device number in local to test
     -t, --time, the seconds to run for iperf3 client (default: 3600)
     -h, --help, show this message
 ```
