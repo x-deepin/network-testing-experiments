@@ -356,7 +356,7 @@ for item in "${ifc_details[@]}"; do
       msg2 "finish with iperf3 server ${ip}:${p}"
       break
     else
-      msg2 "ignore ${ip}:${p}"
+      msg2 "ignore ${arg_server}:${p}"
     fi
   done
   if check_iperf3_result "${result_file}" "${ifc}" "${arg_category}"; then
