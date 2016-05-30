@@ -33,7 +33,9 @@ params:
 
 run:
     steps:
+        - deepin-feedback-cli --dump basic
         - deepin-feedback-cli --dump network
+        - lsusb
         - ./prepare-network.sh connect-wireless ${SSID} ${PASSWORD}
         - ./check-network.sh -s ${IPERF3_SERVER} -c ${ADAPTER_TYPE} -n ${ADAPTER_NUM} -t ${TIME}
         - ./prepare-network.sh clear-wireless-connections
