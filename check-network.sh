@@ -17,7 +17,7 @@ app_file="${0}"
 app_name="$(basename $0)"
 
 declare -a iperf_ports
-for p in {5201..5250}; do
+for p in {5201..5210}; do
   iperf_ports+=("${p}")
 done
 
