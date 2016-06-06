@@ -352,7 +352,7 @@ for item in "${ifc_details[@]}"; do
   msg "Collecting iperf3 data with binding address ${ip}(${ifc})"
   result_file="$(mktemp /tmp/iperf3_result_XXXXXX)"
   for p in "${iperf_ports[@]}"; do
-    if iperf -p "${p}" -B "${ip}" -c "${arg_server}" -f m -t "${arg_time}" > "${result_file}"; then
+    if iperf3 -p "${p}" -B "${ip}" -c "${arg_server}" -f m -t "${arg_time}" > "${result_file}"; then
       msg2 "finish with iperf3 server ${ip}:${p}"
       break
     else
